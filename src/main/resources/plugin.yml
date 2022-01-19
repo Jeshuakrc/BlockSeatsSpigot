@@ -1,0 +1,6 @@
+name: StairChairsSpigot
+version: '${project.version}'
+main: mc.thejsuser.stairchairsspigot.StairChairsSpigot
+api-version: 1.18
+authors: [ TheJsUser ]
+description: Allows players of the server to esasily turn stairs into chairs they can sit on.
