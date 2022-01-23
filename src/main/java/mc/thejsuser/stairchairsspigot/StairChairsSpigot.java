@@ -1,27 +1,23 @@
 package mc.thejsuser.stairchairsspigot;
 
-import de.jeff_media.customblockdata.CustomBlockData;
-import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.spigotmc.event.entity.EntityDismountEvent;
 
 public final class StairChairsSpigot extends JavaPlugin implements Listener {
 
-    //FIELDS
-    private final NamespacedKey isChairNSK = new NamespacedKey(this,"isChair");
-    private final NamespacedKey standIdNSK = new NamespacedKey(this,"standID");
+    private static StairChairsSpigot mainInstance_;
 
     @Override
     public void onEnable() {
+        mainInstance_ = this;
         System.out.println("Hola xd");
         getServer().getPluginManager().registerEvents(this,this);
     }
@@ -29,6 +25,10 @@ public final class StairChairsSpigot extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+    }
+
+    public static StairChairsSpigot getMainInstance() {
+        return mainInstance_;
     }
 
     @EventHandler
@@ -41,35 +41,29 @@ public final class StairChairsSpigot extends JavaPlugin implements Listener {
                 e.getHand().equals(EquipmentSlot.HAND)
         )) { return; }
 
-        if (block.getType().toString().contains("STAIRS")) {
-            if (!isChair(block)) {
-                turnIntoChair(block, e.getPlayer());
-                e.getPlayer().sendMessage("Convertido en silla! xd");
+        Player player = e.getPlayer();
+
+        if (Chair.isChair(block)) {
+            player.sendMessage("Seat!");
+            Chair.getChair(block).seat(player);
+        } else {
+            ItemStack item = player.getInventory().getItemInMainHand();
+            String blockMaterial = block.getType().toString();
+            if(
+                    (blockMaterial.contains("STAIRS") || blockMaterial.contains("SLAB")) &&
+                    item.getType().toString().contains("CARPET")
+            ){
+                ItemStack newItem = item.clone();
+                newItem.setAmount(1);
+                new Chair(block,newItem);
             }
+
         }
 
     }
 
     @EventHandler
-    public void onClickCreeper(PlayerInteractEntityEvent e) {
-        Player player = e.getPlayer();
-        if (e.getRightClicked() instanceof Creeper creeper) {
-            e.getRightClicked().setPassenger(player);
-        }
-    }
+    public void onDismount(EntityDismountEvent e) {
 
-    private void turnIntoChair(Block block, Player player) {
-        PersistentDataContainer dataContainer = new CustomBlockData(block, this);
-        dataContainer.set(isChairNSK, PersistentDataType.BYTE, (byte) 1);
-        Entity stand = block.getWorld().spawnEntity(block.getLocation().add(.5, -1, .5), EntityType.ARMOR_STAND);
-        stand.setPersistent(true);
-        stand.setSilent(true);
-        stand.setGravity(false);
-        dataContainer.set(standIdNSK, PersistentDataType.STRING, stand.getUniqueId().toString());
-        stand.setPassenger(player);
-    }
-    private boolean isChair(Block block) {
-        PersistentDataContainer dataContainer = new CustomBlockData(block,this);
-        return dataContainer.has(isChairNSK,PersistentDataType.BYTE);
     }
 }
