@@ -4,6 +4,7 @@ import de.jeff_media.customblockdata.CustomBlockData;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.type.Stairs;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
@@ -14,7 +15,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.spigotmc.event.entity.EntityDismountEvent;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Objects;
@@ -31,6 +31,7 @@ public class Chair implements Listener {
 
     //STATIC STATEMENT
     static {
+        //Registering the EventListener
         StairChairsSpigot.getMainInstance().getServer().getPluginManager().registerEvents(new eventListener(),mainInstance_);
     }
 
@@ -67,30 +68,41 @@ public class Chair implements Listener {
         return new CustomBlockData(block,StairChairsSpigot.getMainInstance()).has(isChairNSK_,PersistentDataType.BYTE);
     }
     public static Chair getChair(Block block) {
+        // Checking if the provided block has been marked as chair
         if (!isChair(block)) { return null; }
 
-        if (chairs_.containsKey(block)) {
-            return chairs_.get(block);
-        } else {
-
-            String uuid = new CustomBlockData(block, StairChairsSpigot.getMainInstance()).get(standIdNSK_, PersistentDataType.STRING);
-            Collection<Entity> entities = block.getWorld().getNearbyEntities(block.getBoundingBox().shift(0, -1, 0));
-            ArmorStand armorStand = null;
-            for (Entity entity : entities) {
-                if (entity.getUniqueId().toString().equals(uuid)) {
-                    if (entity instanceof ArmorStand stand) {
-                        armorStand = stand;
-                        break;
-                    }
+        // Making sure there's a top armor stand still existing for this one.
+        String uuid = new CustomBlockData(block, StairChairsSpigot.getMainInstance()).get(standIdNSK_, PersistentDataType.STRING);
+        Collection<Entity> entities = block.getWorld().getNearbyEntities(block.getBoundingBox().shift(0, -1, 0));
+        ArmorStand armorStand = null;
+        for (Entity entity : entities) {
+            if (entity.getUniqueId().toString().equals(uuid)) {
+                if (entity instanceof ArmorStand stand) {
+                    armorStand = stand;
+                    break;
                 }
             }
-            if (armorStand == null) {
-                destroy(block);
-                return null;
-            }
-            return new Chair(block,armorStand);
+        }
+
+        // If not, returning null and un-marking this block as chair.
+        if (armorStand == null) {
+            destroy(block);
+            return null;
+        }
+
+        // Checking if there's chair related to this block in memory, if so, returning that one
+        // if not, returning a new one
+        return (chairs_.containsKey(block)) ? chairs_.get(block) : new Chair(block,armorStand);
+    }
+    public static void destroyChair(Block block) {
+        if (!isChair(block)) { return; }
+        if (chairs_.containsKey(block)) {
+            chairs_.get(block).destroy();
+        } else {
+            destroy(block);
         }
     }
+
     private static void destroy(Block block) {
         PersistentDataContainer dataContainer = new CustomBlockData(block,mainInstance_);
         dataContainer.remove(isChairNSK_);
@@ -130,7 +142,7 @@ public class Chair implements Listener {
             armorStand.setSilent(true);
             armorStand.setMarker(true);
             armorStand.setGravity(false);
-            //armorStand.setInvisible(true);
+            armorStand.setInvisible(true);
             armorStand.getPersistentDataContainer().set(isChairMountNSK_,PersistentDataType.BYTE,(byte)1);
 
             armorStand.addPassenger(entity);
@@ -181,12 +193,16 @@ public class Chair implements Listener {
             return this.armorStand_.getEquipment().getHelmet();
         }
         private void destroy() {
-            this.armorStand_.remove();
+            ArmorStand armorStand = this.armorStand_;
+            armorStand.getWorld().dropItem(
+                    chair_.getBlock().getLocation(),
+                    armorStand.getEquipment().getHelmet()
+            );
+            armorStand.remove();
         }
     }
 
     private static class eventListener implements Listener {
-
         @EventHandler
         public void onDismount(EntityDismountEvent e) {
             if(e.getDismounted() instanceof ArmorStand mount) {
@@ -200,6 +216,21 @@ public class Chair implements Listener {
                     Entity entity = e.getEntity();
                     entity.teleport(entity.getLocation().add(0, 1, 0));
                 }
+            }
+        }
+
+        @EventHandler
+        public void onBlockEvent(BlockPhysicsEvent e) {
+            Block block = e.getBlock();
+            if (!Chair.isChair(block)) {
+                return;
+            }
+            if (block.getType().toString().contains("STAIRS")) {
+                if (((Stairs) block.getBlockData()).getHalf().equals(Bisected.Half.TOP)) {
+                    destroyChair(block);
+                }
+            } else {
+                destroyChair(block);
             }
         }
     }
