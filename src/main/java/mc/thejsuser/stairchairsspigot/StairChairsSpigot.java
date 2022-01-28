@@ -25,7 +25,7 @@ public final class StairChairsSpigot extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         mainInstance_ = this;
-        System.out.println("Hola xd");
+        Chair.initialize();
         getServer().getPluginManager().registerEvents(this,this);
     }
 
@@ -61,12 +61,7 @@ public final class StairChairsSpigot extends JavaPlugin implements Listener {
                 return;
             }
         } else {
-            BlockData blockData = block.getBlockData();
-            if (blockData.clone() instanceof Stairs stairs) {
-                if (stairs.getHalf().equals(Stairs.Half.TOP)) { return; }
-            } else if (blockData instanceof Slab slab) {
-                if (slab.getType().equals(Slab.Type.TOP)) { return; }
-            } else { return; }
+            if (!Chair.isChairEligible(block)) { return; }
 
             ItemStack item = player.getInventory().getItemInMainHand();
             if (item.getType().toString().contains("CARPET")) {
@@ -82,10 +77,5 @@ public final class StairChairsSpigot extends JavaPlugin implements Listener {
             } else { return; }
         }
         e.setCancelled(true);
-    }
-
-    @EventHandler
-    public void onDismount(EntityDismountEvent e) {
-
     }
 }
