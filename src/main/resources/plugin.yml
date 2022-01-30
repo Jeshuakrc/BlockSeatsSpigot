@@ -1,6 +1,6 @@
-name: StairChairsSpigot
+name: BlockSeats
 version: '${project.version}'
-main: mc.thejsuser.stairchairsspigot.StairChairsSpigot
+main: mc.thejsuser.blockseats.BlockSeats
 api-version: 1.18
 authors: [ TheJsUser ]
-description: Allows players of the server to esasily turn stairs into chairs they can sit on.
+description: Allows players of the server to esasily turn stairs and slabs into chairs they can sit on.

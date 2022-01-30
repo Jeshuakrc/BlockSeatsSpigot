@@ -1,4 +1,4 @@
-package mc.thejsuser.stairchairsspigot;
+package mc.thejsuser.blockseats;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -22,6 +22,7 @@ public final class BlockSeats extends JavaPlugin implements Listener {
         mainInstance_ = this;
         Seat.initialize();
         getServer().getPluginManager().registerEvents(this,this);
+        getLogger().info("Enabling BlockSeats by TheJsUser");
     }
 
     @Override

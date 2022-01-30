@@ -1,4 +1,4 @@
-package mc.thejsuser.stairchairsspigot;
+package mc.thejsuser.blockseats;
 
 import de.jeff_media.customblockdata.CustomBlockData;
 import org.bukkit.Bukkit;

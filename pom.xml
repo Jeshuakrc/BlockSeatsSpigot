@@ -6,10 +6,10 @@
 
     <groupId>mc.thejsuser</groupId>
     <artifactId>BlockSeatsSpigot</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>StairChairsSpigot</name>
+    <name>BlockSeatsSpigot</name>
 
     <description>Allows players to easily turn stairs and slabs into chairs they can sit on in a vanilla-like way.</description>
     <properties>
@@ -43,7 +43,7 @@
                             <relocations>
                                 <relocation>
                                     <pattern>de.jeff_media.customblockdata.CustomBlockData</pattern>
-                                    <shadedPattern>mc.thejsuser.stairchairsspigot.CustomBlockData</shadedPattern>
+                                    <shadedPattern>mc.thejsuser.blockseats.CustomBlockData</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
