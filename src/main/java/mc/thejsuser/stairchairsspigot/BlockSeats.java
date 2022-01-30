@@ -4,10 +4,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
-import org.bukkit.block.data.Bisected;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.block.data.type.Slab;
-import org.bukkit.block.data.type.Stairs;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -15,17 +11,16 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.spigotmc.event.entity.EntityDismountEvent;
 import java.util.Objects;
 
-public final class StairChairsSpigot extends JavaPlugin implements Listener {
+public final class BlockSeats extends JavaPlugin implements Listener {
 
-    private static StairChairsSpigot mainInstance_;
+    private static BlockSeats mainInstance_;
 
     @Override
     public void onEnable() {
         mainInstance_ = this;
-        Chair.initialize();
+        Seat.initialize();
         getServer().getPluginManager().registerEvents(this,this);
     }
 
@@ -34,7 +29,7 @@ public final class StairChairsSpigot extends JavaPlugin implements Listener {
         // Plugin shutdown logic
     }
 
-    public static StairChairsSpigot getMainInstance() {
+    public static BlockSeats getMainInstance() {
         return mainInstance_;
     }
 
@@ -48,9 +43,9 @@ public final class StairChairsSpigot extends JavaPlugin implements Listener {
                 e.getAction().equals(Action.RIGHT_CLICK_BLOCK)
         )) { return; }
 
-        if (Chair.isChair(block)) {
+        if (Seat.isSeat(block)) {
             try {
-                Chair.getChair(block).seat(player);
+                Seat.getSeat(block).seat(player);
             } catch (NullPointerException ex) {
                 Location loc = block.getLocation();
                 Bukkit.getLogger().warning(String.format(
@@ -61,11 +56,11 @@ public final class StairChairsSpigot extends JavaPlugin implements Listener {
                 return;
             }
         } else {
-            if (!Chair.isChairEligible(block)) { return; }
+            if (!Seat.isSeatEligible(block)) { return; }
 
             ItemStack item = player.getInventory().getItemInMainHand();
             if (item.getType().toString().contains("CARPET")) {
-                new Chair(block,new ItemStack(item.getType()));
+                new Seat(block,new ItemStack(item.getType()));
                 if (!player.getGameMode().equals(GameMode.CREATIVE)) {
                     if (item.getAmount() > 1) {
                         item.setAmount(item.getAmount() - 1);

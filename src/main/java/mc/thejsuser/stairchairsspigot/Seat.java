@@ -3,10 +3,8 @@ package mc.thejsuser.stairchairsspigot;
 import de.jeff_media.customblockdata.CustomBlockData;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
-import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Slab;
 import org.bukkit.block.data.type.Stairs;
@@ -25,61 +23,61 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Objects;
 
-public class Chair implements Listener {
+public class Seat implements Listener {
 
     //STATIC FIELDS
-    private static final StairChairsSpigot mainInstance_ = StairChairsSpigot.getMainInstance();
+    private static final BlockSeats mainInstance_ = BlockSeats.getMainInstance();
     private static final NamespacedKey isChairNSK_ = new NamespacedKey(mainInstance_,"isChair");
     private static final NamespacedKey standIdNSK_ = new NamespacedKey(mainInstance_,"standID");
     private static final NamespacedKey isChairMountNSK_ = new NamespacedKey(mainInstance_,"isChairMount");
-    private static final HashMap<Block,Chair> chairs_ = new HashMap<>();
-    private static final HashMap<Chair,ArmorStand> mounts_ = new HashMap<>();
+    private static final HashMap<Block, Seat> seats_ = new HashMap<>();
+    private static final HashMap<Seat,ArmorStand> mounts_ = new HashMap<>();
 
     //STATIC STATEMENT
     static {
         //Registering the EventListener
-        StairChairsSpigot.getMainInstance().getServer().getPluginManager().registerEvents(new eventListener(),mainInstance_);
+        BlockSeats.getMainInstance().getServer().getPluginManager().registerEvents(new eventListener(),mainInstance_);
     }
 
     //FIELDS
     private final Block block_;
-    private final ChairTop top_;
+    private final SeatTop top_;
 
     //GETTERS
     public Block getBlock() {
         return this.block_;
     }
-    public ChairTop getTop() {
+    public SeatTop getTop() {
         return this.top_;
     }
 
     //CONSTRUCTORS
-    public Chair(Block chair, ItemStack topCover) {
+    public Seat(Block chair, ItemStack topCover) {
         this.block_ = chair;
         PersistentDataContainer dataContainer = new CustomBlockData(chair,mainInstance_);
         dataContainer.set(isChairNSK_, PersistentDataType.BYTE, (byte) 1);
 
-        this.top_ = new ChairTop(this,topCover);
+        this.top_ = new SeatTop(this,topCover);
         dataContainer.set(standIdNSK_,PersistentDataType.STRING,this.top_.armorStand_.getUniqueId().toString());
 
-        chairs_.put(this.block_,this);
+        seats_.put(this.block_,this);
     }
-    private Chair(Block block, ArmorStand armorStand){
+    private Seat(Block block, ArmorStand armorStand){
         this.block_ = block;
-        this.top_ = new ChairTop(this, armorStand);
+        this.top_ = new SeatTop(this, armorStand);
     }
 
     //STATIC METHODS
     public static void initialize() {}
-    public static boolean isChair(Block block){
+    public static boolean isSeat(Block block){
         return new CustomBlockData(block,mainInstance_).has(isChairNSK_,PersistentDataType.BYTE);
     }
-    public static Chair getChair(Block block) {
+    public static Seat getSeat(Block block) {
         // Checking if the provided block has been marked as chair
-        if (!isChair(block)) { return null; }
+        if (!isSeat(block)) { return null; }
 
         // Making sure there's a top armor stand still existing for this one.
-        String uuid = new CustomBlockData(block, StairChairsSpigot.getMainInstance()).get(standIdNSK_, PersistentDataType.STRING);
+        String uuid = new CustomBlockData(block, BlockSeats.getMainInstance()).get(standIdNSK_, PersistentDataType.STRING);
         BoundingBox boundingBox = new BoundingBox(block.getX(),block.getY() - 1, block.getZ(), block.getX() + 1, block.getY(), block.getZ() + 1);
         Collection<Entity> entities = block.getWorld().getNearbyEntities(boundingBox);
         ArmorStand armorStand = null;
@@ -100,9 +98,9 @@ public class Chair implements Listener {
 
         // Checking if there's chair related to this block in memory, if so, returning that one
         // if not, returning a new one
-        return (chairs_.containsKey(block)) ? chairs_.get(block) : new Chair(block,armorStand);
+        return (seats_.containsKey(block)) ? seats_.get(block) : new Seat(block,armorStand);
     }
-    public static boolean isChairEligible(Block block) {
+    public static boolean isSeatEligible(Block block) {
 
         BlockData blockData = block.getBlockData();
         if (blockData instanceof Stairs stairs) {
@@ -183,21 +181,21 @@ public class Chair implements Listener {
             }
             mount.remove();
         }
-        chairs_.remove(this.block_);
+        seats_.remove(this.block_);
         destroy(this.block_);
         this.top_.destroy();
     }
 
     //CLASSES
-    private class ChairTop{
+    private class SeatTop {
 
         //FIELDS
         private ArmorStand armorStand_;
-        private Chair chair_;
+        private Seat chair_;
         private static final NamespacedKey isChairTopNSK_ = new NamespacedKey(mainInstance_,"isChairTop");
 
         //CONSTRUCTORS
-        private ChairTop(Chair chair, ItemStack top){
+        private SeatTop(Seat chair, ItemStack top){
             this.chair_ = chair;
             Block chairBlock = this.chair_.getBlock();
 
@@ -219,8 +217,8 @@ public class Chair implements Listener {
             this.armorStand_.addEquipmentLock(EquipmentSlot.FEET, ArmorStand.LockType.ADDING_OR_CHANGING);
             this.armorStand_.getPersistentDataContainer().set(isChairTopNSK_,PersistentDataType.BYTE,(byte)1);
         }
-        private ChairTop(Chair chair, ArmorStand armorStand) {
-            this.chair_ = chair;
+        private SeatTop(Seat seat, ArmorStand armorStand) {
+            this.chair_ = seat;
             this.armorStand_ = armorStand;
         }
 
@@ -248,9 +246,9 @@ public class Chair implements Listener {
         public void onDismount(EntityDismountEvent e) {
             if(e.getDismounted() instanceof ArmorStand mount) {
                 if (mount.getPersistentDataContainer().has(isChairMountNSK_, PersistentDataType.BYTE)) {
-                    for (Chair chair : Chair.mounts_.keySet()) {
-                        if (mounts_.get(chair) == mount) {
-                            mounts_.remove(chair);
+                    for (Seat seat : Seat.mounts_.keySet()) {
+                        if (mounts_.get(seat) == mount) {
+                            mounts_.remove(seat);
                         }
                     }
                     mount.remove();
@@ -263,10 +261,10 @@ public class Chair implements Listener {
         @EventHandler
         public void onBlockEvent(BlockPhysicsEvent e) {
             Block block = e.getBlock();
-            if (!Chair.isChair(block)) { return; }
-            if (!Chair.isChairEligible(block)) {
+            if (!Seat.isSeat(block)) { return; }
+            if (!Seat.isSeatEligible(block)) {
                 try {
-                    Chair.getChair(block).destroy();
+                    Seat.getSeat(block).destroy();
                 } catch (NullPointerException ex) {
                     Location loc = block.getLocation();
                     Bukkit.getLogger().warning(String.format(
@@ -284,8 +282,8 @@ public class Chair implements Listener {
                     if (armorStand.getPersistentDataContainer().has(isChairMountNSK_,PersistentDataType.BYTE)) {
                         armorStand.remove();
                     }
-                    if (ChairTop.isTop(armorStand)) {
-                        if (!Chair.isChair(armorStand.getWorld().getBlockAt(armorStand.getLocation().add(0,1,0)))) {
+                    if (SeatTop.isTop(armorStand)) {
+                        if (!Seat.isSeat(armorStand.getWorld().getBlockAt(armorStand.getLocation().add(0,1,0)))) {
                             armorStand.remove();
                         }
                     }
